@@ -96,8 +96,9 @@ end
 
 jcallExpression = :(jcall(receiver, methodName, returnType, parameterTypes, args...))
 
-function Base.getproperty(receiver::JavaObject, symbol::Symbol)
-    println(stdin)
+function Base.getproperty(receiver::JavaObject, symbol::Symbol, args...)
+    string = 
+    show(string)
 end
 
 function j(expr)
