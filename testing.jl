@@ -1,5 +1,5 @@
 using JavaCall
-JavaCall.init(["-Xmx128M"])
+JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
 JMath = @jimport java.lang.Math
 jmath = JMath(())
 JHashMap = @jimport java.util.HashMap
@@ -62,8 +62,6 @@ end
 #     methodDictionary
 # end
 
-
-
 function makeMethodDictionary(instance::JavaObject)
     listOfMethods = listmethods(instance)
     dict = Dict()
@@ -95,3 +93,58 @@ function makeMethodDictionary(instance::JavaObject)
     end
     dict
 end
+
+jcallExpression = :(jcall(receiver, methodName, returnType, parameterTypes, args...))
+
+function Base.getproperty(receiver::JavaObject, symbol::Symbol)
+    println(stdin)
+end
+
+function j(expr)
+    receiver = @eval $(first(first(expr.args).args))
+    println("\nmethod's receiver:")
+    show(receiver)
+
+    methodName = SubString(string(last(first(expr.args).args)), 2, length(string(last(first(expr.args).args))))
+    println("\n\nmethod's name:")
+    show(methodName)
+
+    arguments = deepcopy(expr.args)
+    popfirst!(arguments)
+    argumentTypes = []
+    argumentValues = []
+    for argSymbol in arguments
+        argument = @eval $(argSymbol)
+        push!(argumentTypes, typeof(argument))
+        push!(argumentValues, argument)
+    end
+    argumentTypes = tuple(argumentTypes...)
+    argumentValues = tuple(argumentValues...)
+    println("\n\nmethod's parameter types")
+    show(argumentTypes)
+    println("\n\npassed parameter values:")
+    show(argumentValues)
+    println("\n")
+
+    # jcall(receiver, methodName, JObject, argumentTypes, argumentValues...)
+    "draw what where"
+end
+
+# Proof that JavaCall doesn't take care of Multiple Dispatch
+# Given a Line and a Brush, but generalizing the parameter types of draw for Shape and Brush
+# jcall doesn't choose the most specific method
+using JavaCall
+JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
+Printer = JavaCall.jimport("statement.Printer")
+printer = Printer(())
+allMethods = listmethods(printer, "draw")
+returnType = JavaCall.jimport(getname(getreturntype(last(allMethods))))
+parameterTypes = getparametertypes(last(allMethods))
+param1GeneralizationType = JavaCall.jimport(getname(first(parameterTypes)))
+param1SpecificationType = JavaCall.jimport("statement.Line")
+param1 = param1SpecificationType(())
+param2Type = JavaCall.jimport(getname(last(parameterTypes)))
+param2 = param2Type(())
+paramTuple = (param1GeneralizationType, param2Type)
+jcall(printer, "draw", returnType, paramTuple, param1, param2)
+expr = :(printer.draw(param1, param2))
