@@ -7,7 +7,7 @@
 
 ## Notes on JavaCall (0.7.8)
 
-- BUG:  
+### BUGS:  
 - JavaCall 0.7.8 bug - wrongful primitive Java types convertion / Scenario: a Java method taking a jint from Julia to Java -> signature: public void method(int i){...} / getparametertypes(method) returns JavaObject{:int} / invoking the method with an input of type JavaObject{:int} fails / invoking the method with an input of type jint works / the bug: asking the method what it receives and passing an argument of that type doesn't work -> wrongful conversion.
 - JavaCall 0.7.8 bug - having jlong as Int64 seems to be a bad idea, since Julia's default ints are Int64, which makes them incompatible with Java's. Same goes for Float32/64. 
 
