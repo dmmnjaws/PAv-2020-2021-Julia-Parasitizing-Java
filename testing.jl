@@ -1,136 +1,3 @@
-using JavaCall
-JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
-JMath = @jimport java.lang.Math
-jmath = JMath(())
-JHashMap = @jimport java.util.HashMap
-jhashmap = JHashMap(())
-jhashmap = makeInstance(JHashMap)
-
-struct JavaValue
-    ref::JavaObject
-    methods::Dict
-end
-
-# struct JavaStaticValue
-#     ref::Type{JavaObject{T}} where T
-#     methods::Dict
-# end
-
-Base.show(io::IO, javaValue::JavaValue) =
-    show(io, getfield(javaValue, :ref))
-    println("")
-
-# Base.show(io::IO, javaStaticValue::JavaStaticValue) =
-#     show(io, getfield(javaStaticValue, :ref))
-#     println("")
-
-function Base.getproperty(javaValue::JavaValue, symbol::Symbol)
-    if symbol == Symbol(String("ref"))
-        getfield(javaValue, :ref)
-    elseif symbol == Symbol(String("methods"))
-        getfield(javaValue, :methods)
-    else
-        getfield(javaValue, :methods)[symbol](getfield(javaValue, :ref))
-    end
-end
-
-# Base.getproperty(javaStaticValue::JavaStaticValue, symbol::Symbol) =
-#     getfield(javaStaticValue, :methods)[symbol](getfield(javaStaticValue, :ref))
-
-function makeInstance(type::DataType, args...)
-    instance = type((args));
-    JavaValue(instance, makeMethodDictionary(instance))
-end
-
-# function makeMethodDictionary(instance::JavaObject)
-#     listOfMethods = listmethods(instance)
-#     methodDictionary = Dict()
-#     for method::JMethod in listOfMethods
-#         methodName = Symbol(getname(method))
-#         methodDictionary[methodName] = (method) -> (receiver) -> (args...) -> (
-#             methodToInvoque = method;
-#             show("method: " * method);
-#             println("");
-#             show("receiver: " * receiver);
-#             println("");
-#             show("arguments: " * args);
-#             println("");
-#             invocation = jcall(receiver, methodToInvoque, args);
-#             JavaValue(invocation, makeMethodDictionary(invocation))
-#         )
-#     end
-#     methodDictionary
-# end
-
-function makeMethodDictionary(instance::JavaObject)
-    listOfMethods = listmethods(instance)
-    dict = Dict()
-    for i::JMethod in listOfMethods
-        methodName = Symbol(getname(i))
-        methodReturnType = typeof(getreturntype(i))
-        methodParameterTypes = []
-        for i in getparametertypes(i)
-            push!(methodParameterTypes, JObject)
-            # push!(methodParameterTypes, typeof(i))
-            # show(methodParameterTypes)
-            # println("")
-        end
-        methodParameterTypes = tuple(methodParameterTypes...)
-        dict[methodName] =
-                (receiver) -> (args...) -> (
-            show(receiver);
-            println("");
-            show(args);
-            println("");
-            show(methodParameterTypes);
-            println("");
-            show(methodReturnType);
-            println("");
-            JavaValue(jcall(receiver, getname(i), methodReturnType, methodParameterTypes, args),
-            makeMethodDictionary(jcall(receiver, getname(i), methodReturnType, methodParameterTypes, args))))
-        # show(dict[methodName])
-        # println("")
-    end
-    dict
-end
-
-jcallExpression = :(jcall(receiver, methodName, returnType, parameterTypes, args...))
-
-function Base.getproperty(receiver::JavaObject, symbol::Symbol, args...)
-    string = 
-    show(string)
-end
-
-function j(expr)
-    receiver = @eval $(first(first(expr.args).args))
-    println("\nmethod's receiver:")
-    show(receiver)
-
-    methodName = SubString(string(last(first(expr.args).args)), 2, length(string(last(first(expr.args).args))))
-    println("\n\nmethod's name:")
-    show(methodName)
-
-    arguments = deepcopy(expr.args)
-    popfirst!(arguments)
-    argumentTypes = []
-    argumentValues = []
-    for argSymbol in arguments
-        argument = @eval $(argSymbol)
-        push!(argumentTypes, typeof(argument))
-        push!(argumentValues, argument)
-    end
-    argumentTypes = tuple(argumentTypes...)
-    argumentValues = tuple(argumentValues...)
-    println("\n\nmethod's parameter types")
-    show(argumentTypes)
-    println("\n\npassed parameter values:")
-    show(argumentValues)
-    println("\n")
-
-    # jcall(receiver, methodName, JObject, argumentTypes, argumentValues...)
-    "draw what where"
-end
-
 # Proof that JavaCall doesn't take care of Multiple Dispatch
 # Given a Line and a Brush, but generalizing the parameter types of draw for Shape and Brush
 # jcall doesn't choose the most specific method
@@ -146,6 +13,168 @@ param1SpecificationType = JavaCall.jimport("statement.Line")
 param1 = param1SpecificationType(())
 param2Type = JavaCall.jimport(getname(last(parameterTypes)))
 param2 = param2Type(())
-paramTuple = (param1GeneralizationType, param2Type)
-jcall(printer, "draw", returnType, paramTuple, param1, param2)
+paramTypeTuple = (param1GeneralizationType, param2Type)
+paramValueTuple = [param1, param2]
+jcall(printer, "draw", returnType, paramTypeTuple, param1, param2)
 expr = :(printer.draw(param1, param2))
+
+paramTypeTuple = (JObject, JString, Array{JObject, 1})
+javaDispatcher = JavaCall.jimport("selector.UsingMultipleDispatchExtended")
+invokeMethod = first(listmethods(javaDispatcher))
+jcall(javaDispatcher, "invoke", JObject, paramTypeTuple, printer, "draw", paramValueTuple)
+
+j_u_arrays = @jimport java.util.Arrays
+jcall(j_u_arrays, "binarySearch", jint, (Array{jint,1}, jint), [10,20,30,40,50,60], 40)
+jcall(j_u_arrays, "binarySearch", jint, (Array{JavaObject,1}, JavaObject), ["123","abc","uvw","xyz"], "uvw")
+jcall(j_u_arrays, "binarySearch", jint, (Array{JObject,1}, JObject), ["123","abc","uvw","xyz"], "uvw")
+
+# JavaCall 0.7.8 bug - wrongful primitive Java types convertion:
+method = first(listmethods, "compute")
+methodreturntype = JavaCall.jimport(getname(getreturntype(method)))
+methodparametertypes = tuple(map(x-> JavaCall.jimport(getname(x)), getparametertypes(method))...)
+methodname = jcall(method, "getName"; JString, (),)
+# this fails because returntype and parametertypes are JavaObject{:int}, which are aparently not the same as jint = Int32:
+jcall(printer, methodname, methodreturntype, methodparametertypes, 1, 1)
+# this works:
+jcall(printer, methodname, jint, (jint, jint), 1, 1)
+
+function convertPrimitive(primitive)
+    if primitive == JavaObject{:int} || primitive == Int32
+        jint
+    elseif primitive == JavaObject{:long} || primitive == Int64
+        jlong
+    elseif primitive == JavaObject{:float} || primitive == Float32
+        jfloat
+    elseif primitive == JavaObject{:double} || primitive == Float64
+        jdouble
+    elseif primitive == JavaObject{:char} || primitive == UInt16
+        jchar
+    elseif primitive == JavaObject{:boolean} || primitive == UInt8
+        jboolean
+    elseif primitive == Nothing
+        Nothing
+    else
+        expr = importExprBuilder(getImportName(primitive))
+        eval(expr)
+        expr.args[1]
+    end
+end
+
+function j(expr)
+    try
+        if !((expr.head == :call) && (expr.args[1].head == :.))
+            throw(ArgumentError("Usage: @jcall receiver.method(args...)"))
+        end
+    catch LoadError
+        throw(ArgumentError("Usage: @jcall receiver.method(args...)"))
+    end
+
+    receiver = first(first(expr.args).args)
+    methodName = string(SubString(string(last(first(expr.args).args)), 2, length(string(last(first(expr.args).args)))))
+    arguments = deepcopy(expr.args)
+    popfirst!(arguments)
+    methodInterpreter((@eval $(receiver)), methodName)
+    expr = :()
+    expr.head = :call
+    push!(expr.args, Symbol(methodName))
+    push!(expr.args, Symbol(receiver))
+    for arg in arguments
+        push!(expr.args, arg)
+    end
+    eval(expr)
+end
+
+macro jcall(expr)
+    j(expr)
+end
+
+function methodInterpreter(receiver, methodName::String)
+    methods = listmethods(receiver, methodName)
+    for method::JMethod in methods
+        parameterTypes = getparametertypes(method)
+        parameterTypes = tuple(map(x -> eval(convertPrimitive(JavaCall.jimport(getname(x)))), parameterTypes)...)
+        returnType = convertPrimitive(JavaCall.jimport(getname(getreturntype(method))))
+        methodName = jcall(method, "getName", JString, (),)
+        exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes)
+        exprImplementation = exprImplementationBuilder(receiver, methodName, returnType, parameterTypes)
+        expression = exprBuilder(exprSignature, exprImplementation)
+        eval(expression)
+    end
+end
+
+function exprSignatureBuilder(receiver, methodName::String, parameterTypes)
+    expr = :()
+    expr.head = :call
+    push!(expr.args, Symbol(methodName))
+    i = "a"
+    push!(expr.args, exprParameterBuilder(Symbol("receiver"), Symbol(convertPrimitive(receiver))))
+    for parameterType::DataType in parameterTypes
+        retifiedType = Symbol(convertPrimitive(parameterType))
+        push!(expr.args, exprParameterBuilder(Symbol(i), retifiedType))
+        i = i * "a"
+    end
+    expr
+end
+
+function exprImplementationBuilder(receiver, methodName::String, returnType, parameterTypes)
+    expr = :()
+    expr.head = Symbol("block")
+    push!(expr.args, LineNumberNode)
+    mainexpr = :(jcall($(receiver), $(methodName), $(returnType), $(parameterTypes)))
+    i = "a"
+    for parameterType::DataType in parameterTypes
+        push!(mainexpr.args, Symbol(i))
+        i = i * "a"
+    end
+    push!(expr.args, mainexpr)
+    expr
+end
+
+function exprParameterBuilder(parameterName::Symbol, parameterType::Symbol)
+    expr = :()
+    expr.head = :(::)
+    push!(expr.args, parameterName)
+    push!(expr.args, parameterType)
+    expr
+end
+
+function exprBuilder(exprSignature::Expr, exprImplementaiton::Expr)
+    expr = :()
+    expr.head = :(=)
+    push!(expr.args, exprSignature)
+    push!(expr.args, exprImplementaiton)
+    expr
+end
+
+function importExprBuilder(importName::String)
+    className = last(split(importName, "."))
+    expr = :()
+    expr.head = :(=)
+    push!(expr.args, Symbol(className))
+    assignmentExpr = :()
+    assignmentExpr.head = :call
+    assignmentExprCall = :()
+    assignmentExprCall.head = :(.)
+    push!(assignmentExprCall.args, Symbol("JavaCall"))
+    quoteNode = QuoteNode(Symbol("jimport"))
+    push!(assignmentExprCall.args, quoteNode)
+    push!(assignmentExpr.args, assignmentExprCall)
+    push!(assignmentExpr.args, importName)
+    push!(expr.args, assignmentExpr)
+    expr
+end
+
+function getImportName(foo)::String
+    if typeof(foo) == DataType
+        str = string(foo)
+    else
+        str = string(typeof(foo))
+    end
+    start = first(findfirst("\"", str))+1
+    finish = first(findlast("\"", str))-1
+    str = SubString(str, start, finish)
+end
+
+function getTypeName(foo)::String
+    last(split(getImportName(foo), "."))
+end
