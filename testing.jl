@@ -25,7 +25,6 @@ jcall(javaDispatcher, "invoke", JObject, paramTypeTuple, printer, "draw", paramV
 
 j_u_arrays = @jimport java.util.Arrays
 jcall(j_u_arrays, "binarySearch", jint, (Array{jint,1}, jint), [10,20,30,40,50,60], 40)
-jcall(j_u_arrays, "binarySearch", jint, (Array{JavaObject,1}, JavaObject), ["123","abc","uvw","xyz"], "uvw")
 jcall(j_u_arrays, "binarySearch", jint, (Array{JObject,1}, JObject), ["123","abc","uvw","xyz"], "uvw")
 
 # JavaCall 0.7.8 bug - wrongful primitive Java types convertion:
@@ -51,6 +50,26 @@ function convertPrimitive(primitive)
         jchar
     elseif primitive == JavaObject{:boolean} || primitive == UInt8
         jboolean
+    elseif primitive == JavaObject{:short} || primitive == Int16
+        jshort
+    elseif primitive == JavaObject{:byte} || primitive == Int8
+        jbyte
+    elseif primitive == JavaObject{Symbol("int[]")} || primitive == Array{Int32, 1}
+        exprArrayTypeBuilder(:Int32)
+    elseif primitive == JavaObject{Symbol("long[]")} || primitive == Array{Int64, 1}
+        exprArrayTypeBuilder(:Int64)
+    elseif primitive == JavaObject{Symbol("float[]")} || primitive == Array{Float32, 1}
+        exprArrayTypeBuilder(:Float32)
+    elseif primitive == JavaObject{Symbol("double[]")} || primitive == Array{Float64, 1}
+        exprArrayTypeBuilder(:Float64)
+    elseif primitive == JavaObject{Symbol("char[]")} || primitive == Array{UInt16, 1}
+        exprArrayTypeBuilder(:UInt16)
+    elseif primitive == JavaObject{Symbol("boolean[]")} || primitive == Array{UInt8, 1}
+        exprArrayTypeBuilder(:UInt8)
+    elseif primitive == JavaObject{Symbol("short[]")} || primitive == Array{Int16, 1}
+        exprArrayTypeBuilder(:Int16)
+    elseif primitive == JavaObject{Symbol("byte[]")} || primitive == Array{Int8, 1}
+        exprArrayTypeBuilder(:Int8)
     elseif primitive == Nothing
         Nothing
     else
@@ -91,6 +110,14 @@ end
 function methodInterpreter(receiver, methodName::String)
     methods = listmethods(receiver, methodName)
     for method::JMethod in methods
+
+        # TODO: check if method is static. If method is static, two methods for the generic function should exist:
+        # 1. one taking the type of the receiver object, as usual,
+        # 2. the other taking the type Type{JavaObject{T}} where T is the type of the receiver (static)
+        # ex:
+        # 1. binarySearch(::JavaObject{Symbol("java.util.Arrays")}, ::Array{Int64,1}, ::Int64) at none:0
+        # 2. binarySearch(::Type{JavaObject{Symbol("java.util.Arrays")}}, ::Array{Int64,1}, ::Int64) at none:0
+
         parameterTypes = getparametertypes(method)
         parameterTypes = tuple(map(x -> eval(convertPrimitive(JavaCall.jimport(getname(x)))), parameterTypes)...)
         returnType = convertPrimitive(JavaCall.jimport(getname(getreturntype(method))))
@@ -109,7 +136,7 @@ function exprSignatureBuilder(receiver, methodName::String, parameterTypes)
     i = "a"
     push!(expr.args, exprParameterBuilder(Symbol("receiver"), Symbol(convertPrimitive(receiver))))
     for parameterType::DataType in parameterTypes
-        retifiedType = Symbol(convertPrimitive(parameterType))
+        retifiedType = convertPrimitive(parameterType)
         push!(expr.args, exprParameterBuilder(Symbol(i), retifiedType))
         i = i * "a"
     end
@@ -130,7 +157,7 @@ function exprImplementationBuilder(receiver, methodName::String, returnType, par
     expr
 end
 
-function exprParameterBuilder(parameterName::Symbol, parameterType::Symbol)
+function exprParameterBuilder(parameterName::Symbol, parameterType)
     expr = :()
     expr.head = :(::)
     push!(expr.args, parameterName)
@@ -143,6 +170,15 @@ function exprBuilder(exprSignature::Expr, exprImplementaiton::Expr)
     expr.head = :(=)
     push!(expr.args, exprSignature)
     push!(expr.args, exprImplementaiton)
+    expr
+end
+
+function exprArrayTypeBuilder(type::Symbol)
+    expr = :()
+    expr.head = :curly
+    push!(expr.args, :Array)
+    push!(expr.args, type)
+    push!(expr.args, 1)
     expr
 end
 

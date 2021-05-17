@@ -22,4 +22,10 @@ public class Printer extends Device {
     public int compute(long i, long j) {
         return (int)i+(int)j+2000;
     }
+
+    public int compute(long[] v){
+        int res = 0;
+        for (long l : v){ res = res+(int)l; }
+        return (int)res;
+    }
 }
