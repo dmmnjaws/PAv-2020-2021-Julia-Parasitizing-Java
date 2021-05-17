@@ -15,9 +15,11 @@
 
 - Fix wrongful conversion from Julia int to Java's long (due to Julia's int type being Int64, which maps to Java's long). Test: @jcall printer.compute(1, 1) should invoke public int compute(int i, int j) instead of public int compute(long i, long j).
 
-- Support Static Invocations
+- <s>Support Static Invocations.</s>
 
-- Fix wrongful formation of expression - confusion with Julia's arrays and Java's arrays.
+- <s>Fix wrongful formation of expression - confusion with Julia's arrays and Java's arrays.</s>
+
+- Fix wrongful convertion of parameters of type string.
 
 ## Useful Links:
 

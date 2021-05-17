@@ -122,19 +122,30 @@ function methodInterpreter(receiver, methodName::String)
         parameterTypes = tuple(map(x -> eval(convertPrimitive(JavaCall.jimport(getname(x)))), parameterTypes)...)
         returnType = convertPrimitive(JavaCall.jimport(getname(getreturntype(method))))
         methodName = jcall(method, "getName", JString, (),)
-        exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes)
+        exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes, false)
         exprImplementation = exprImplementationBuilder(receiver, methodName, returnType, parameterTypes)
         expression = exprBuilder(exprSignature, exprImplementation)
         eval(expression)
+
+        if jcall(method, "getModifiers", jint, (), ) == 9
+            exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes, true)
+            expression = exprBuilder(exprSignature, exprImplementation)
+            eval(expression)
+        end
     end
 end
 
-function exprSignatureBuilder(receiver, methodName::String, parameterTypes)
+function exprSignatureBuilder(receiver, methodName::String, parameterTypes, isStatic::Bool)
     expr = :()
     expr.head = :call
     push!(expr.args, Symbol(methodName))
     i = "a"
-    push!(expr.args, exprParameterBuilder(Symbol("receiver"), Symbol(convertPrimitive(receiver))))
+    if isStatic
+        staticTypeExpr = exprStaticReceiverBuilder(getImportName(receiver))
+        push!(expr.args, exprParameterBuilder(Symbol("receiver"), staticTypeExpr))
+    else
+        push!(expr.args, exprParameterBuilder(Symbol("receiver"), Symbol(convertPrimitive(receiver))))
+    end
     for parameterType::DataType in parameterTypes
         retifiedType = convertPrimitive(parameterType)
         push!(expr.args, exprParameterBuilder(Symbol(i), retifiedType))
@@ -179,6 +190,22 @@ function exprArrayTypeBuilder(type::Symbol)
     push!(expr.args, :Array)
     push!(expr.args, type)
     push!(expr.args, 1)
+    expr
+end
+
+function exprStaticReceiverBuilder(importName::String)
+    expr = :()
+    expr.head = :curly
+    push!(expr.args, :Type)
+    inexpr = :()
+    inexpr.head = :curly
+    push!(inexpr.args, :JavaObject)
+    ininexpr = :()
+    ininexpr.head = :call
+    push!(ininexpr.args, :Symbol)
+    push!(ininexpr.args, importName)
+    push!(inexpr.args, ininexpr)
+    push!(expr.args, inexpr)
     expr
 end
 

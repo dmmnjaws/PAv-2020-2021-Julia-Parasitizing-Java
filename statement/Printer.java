@@ -28,4 +28,8 @@ public class Printer extends Device {
         for (long l : v){ res = res+(int)l; }
         return (int)res;
     }
+
+    public static String staticMethod(String string){
+        return string;
+    }
 }
