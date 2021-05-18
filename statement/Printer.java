@@ -32,4 +32,10 @@ public class Printer extends Device {
     public static String staticMethod(String string){
         return string;
     }
+
+    public static String staticMethod(String[] v){
+        String res = "";
+        for (String l : v){ res = res+l; }
+        return res;
+    }
 }

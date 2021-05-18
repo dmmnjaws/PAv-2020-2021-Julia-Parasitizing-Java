@@ -19,7 +19,9 @@
 
 - <s>Fix wrongful formation of expression - confusion with Julia's arrays and Java's arrays.</s>
 
-- Fix wrongful convertion of parameters of type string.
+- <s>Fix wrongful convertion of parameters of type string and string arrays.</s>
+
+- Can't use static methods with an class object as receiver - ERROR: LoadError: JavaCall.JavaCallError("Error calling Java: java.lang.NoSuchMethodError: binarySearch"). calling jcall the manual way also gives this error, why is this? - If this is justified and doesn't need fixing, avoid generation of uneeded methods for the generic function. (for a static method, instead of creating two methods, one taking the class, other the class object as receiver, only generate the method taking class as receiver)
 
 ## Useful Links:
 
