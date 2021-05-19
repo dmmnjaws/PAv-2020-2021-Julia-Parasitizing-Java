@@ -35,3 +35,35 @@ methodname = jcall(method, "getName", JString, (),)
 jcall(printer, methodname, methodreturntype, methodparametertypes, 1, 1)
 # this works:
 jcall(printer, methodname, jint, (jint, jint), 1, 1)
+
+
+# TESTS TO Java-Parazite-Julia:
+using JavaCall
+JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
+Printer = JavaCall.jimport("statement.Printer")
+printer = Printer(())
+Screen = JavaCall.jimport("statement.Screen")
+screen = Screen(())
+Line = JavaCall.jimport("statement.Line")
+line = Line(())
+Brush = JavaCall.jimport("statement.Brush")
+brush = Brush(())
+
+@jcall printer.compute(1, 1)
+@jcall printer.compute(Int32(1), Int32(1))
+@jcall printer.staticMethod("ola")
+@jcall Printer.staticMethod("ola")
+@jcall screen.staticMethod("ola")
+@jcall Screen.staticMethod("ola")
+@jcall printer.staticMethod(["ola", " ", "adeus"])
+@jcall Printer.staticMethod(["ola", " ", "adeus"])
+@jcall printer.draw(line, brush)
+@jcall screen.draw(line, brush)
+
+J_u_arrays = @jimport java.util.Arrays
+j_u_arrays = J_u_arrays()
+
+@jcall J_u_arrays.binarySearch([1,2,3,4], 2)
+@jcall j_u_arrays.binarySearch([1,2,3,4], 2)
+@jcall J_u_arrays.binarySearch(["1","2","3","4"], "2")
+@jcall j_u_arrays.binarySearch(["1","2","3","4"], "2")

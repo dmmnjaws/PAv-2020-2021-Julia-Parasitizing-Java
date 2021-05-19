@@ -1,3 +1,5 @@
+global definedReceiverFunctionPairs = []
+
 function convertPrimitive(primitive)
     if primitive == JavaObject{:int} || primitive == Int32
         jint
@@ -30,6 +32,9 @@ function convertPrimitive(primitive)
     elseif primitive == JavaObject{Symbol("boolean[]")} || primitive == Array{UInt8, 1}
         exprArrayTypeBuilder(:UInt8)
     elseif primitive == JavaObject{Symbol("short[]")} || primitive == Array{Int16, 1}
+        exprArrayTypeBuilder(:Int16)
+    # this can be a bug with JavaCall
+    elseif primitive == JavaObject{Symbol("S[]")} || primitive == Array{Int16, 1}
         exprArrayTypeBuilder(:Int16)
     elseif primitive == JavaObject{Symbol("byte[]")} || primitive == Array{Int8, 1}
         exprArrayTypeBuilder(:Int8)
@@ -64,19 +69,27 @@ function j(expr)
     end
 
     receiver = first(first(expr.args).args)
+    evaluatedReceiver = @eval $(receiver) #= avoid unecessary computing if receiver not defined =#
     methodName = string(SubString(string(last(first(expr.args).args)), 2, length(string(last(first(expr.args).args)))))
     arguments = deepcopy(expr.args)
     popfirst!(arguments)
-    methodInterpreter((@eval $(receiver)), methodName)
-    expr = :()
-    expr.head = :call
-    push!(expr.args, Symbol(methodName))
-    push!(expr.args, Symbol(receiver))
+
+    receiverFunctionPair = getImportName(evaluatedReceiver)*"."*methodName
+    if !(receiverFunctionPair in definedReceiverFunctionPairs)
+         println("\nDEBUG > This method wasn't interpreted before...")
+        methodInterpreter(evaluatedReceiver, methodName)
+        push!(definedReceiverFunctionPairs, receiverFunctionPair)
+    end
+
+    exprres = :()
+    exprres.head = :call
+    push!(exprres.args, Symbol(methodName))
+    push!(exprres.args, Symbol(receiver))
     for arg in arguments
         arg = convertArgument(arg)
-        push!(expr.args, arg)
+        push!(exprres.args, arg)
     end
-    eval(expr)
+    exprres
 end
 
 macro jcall(expr)
@@ -86,18 +99,27 @@ end
 function methodInterpreter(receiver, methodName::String)
     methods = listmethods(receiver, methodName)
     for method::JMethod in methods
+        modifierInt = jcall(method, "getModifiers", jint, (), )
+        Modifier = JavaCall.jimport("java.lang.reflect.Modifier")
+        isStatic = convert(Bool, jcall(Modifier, "isStatic", jboolean, (jint, ), modifierInt))
         parameterTypes = getparametertypes(method)
         parameterTypes = tuple(map(x -> eval(convertPrimitive(JavaCall.jimport(getname(x)))), parameterTypes)...)
         returnType = convertPrimitive(JavaCall.jimport(getname(getreturntype(method))))
         methodName = jcall(method, "getName", JString, (),)
-        exprImplementation = exprImplementationBuilder(receiver, methodName, returnType, parameterTypes)
-
-        if jcall(method, "getModifiers", jint, (), ) == 9
+        implementationReceiver = receiver
+        if isStatic
+            if typeof(receiver) == DataType
+                implementationReceiver = receiver
+            else
+                implementationReceiver = typeof(receiver)
+            end
+        end
+        exprImplementation = exprImplementationBuilder(implementationReceiver, methodName, returnType, parameterTypes)
+        exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes, false)
+        expression = exprBuilder(exprSignature, exprImplementation)
+        eval(expression)
+        if isStatic
             exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes, true)
-            expression = exprBuilder(exprSignature, exprImplementation)
-            eval(expression)
-        else
-            exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes, false)
             expression = exprBuilder(exprSignature, exprImplementation)
             eval(expression)
         end
