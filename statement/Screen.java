@@ -16,4 +16,8 @@ public class Screen extends Device {
     public void draw(Circle c, Pencil p) {
         System.err.println("drawing a circle on screen with pencil!");
     }
+
+    public static String staticMethod(String string){
+        return string;
+    }
 }
