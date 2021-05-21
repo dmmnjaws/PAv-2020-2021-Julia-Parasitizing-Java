@@ -38,4 +38,14 @@ public class Printer extends Device {
         for (String l : v){ res = res+l; }
         return res;
     }
+
+    public static int staticMethod(Line[] v){
+        if (v.length == 1) {
+            return 1;
+        } else if (v.length == 2) {
+            return 2;
+        } else {
+            return 3;
+        }
+    }
 }

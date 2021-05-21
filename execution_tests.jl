@@ -38,6 +38,8 @@ jcall(printer, methodname, jint, (jint, jint), 1, 1)
 
 
 # TESTS TO Java-Parazite-Julia:
+
+# INIT
 using JavaCall
 JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
 Printer = JavaCall.jimport("statement.Printer")
@@ -46,9 +48,13 @@ Screen = JavaCall.jimport("statement.Screen")
 screen = Screen(())
 Line = JavaCall.jimport("statement.Line")
 line = Line(())
+line2 = Line(())
 Brush = JavaCall.jimport("statement.Brush")
 brush = Brush(())
+J_u_arrays = @jimport java.util.Arrays
+j_u_arrays = J_u_arrays()
 
+# WORKING
 @jcall printer.compute(1, 1)
 @jcall printer.compute(Int32(1), Int32(1))
 @jcall printer.staticMethod("ola")
@@ -59,11 +65,11 @@ brush = Brush(())
 @jcall Printer.staticMethod(["ola", " ", "adeus"])
 @jcall printer.draw(line, brush)
 @jcall screen.draw(line, brush)
-
-J_u_arrays = @jimport java.util.Arrays
-j_u_arrays = J_u_arrays()
-
+@jcall printer.staticMethod([line])
+@jcall printer.staticMethod([line, line2])
 @jcall J_u_arrays.binarySearch([1,2,3,4], 2)
 @jcall j_u_arrays.binarySearch([1,2,3,4], 2)
+
+# NOT WORKING
 @jcall J_u_arrays.binarySearch(["1","2","3","4"], "2")
 @jcall j_u_arrays.binarySearch(["1","2","3","4"], "2")

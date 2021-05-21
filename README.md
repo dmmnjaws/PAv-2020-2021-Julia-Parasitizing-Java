@@ -35,7 +35,9 @@
 
 - Do the due convertion of return values (add convertReturn function, call it with res = eval(expr) in the end of j(expr) function), at least for primitive types (those jcall can convert)
 
-- UNTESTED: Methods that take arrays of other Class Objects
+- <s>Support methods that take arrays of other Class Objects. - Ex: public int staticMethod(Line[]) from statement.Printer</s>
+
+- If we've got two classes with the same name from different packages, it might get confused (untested)
 
 ## Useful Links:
 

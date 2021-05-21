@@ -1,7 +1,11 @@
 global definedReceiverFunctionPairs = []
 
 function convertPrimitive(primitive)
-    if primitive == JavaObject{:int} || primitive == Int32
+     # show(primitive)
+     # print("\n")
+    if primitive == Nothing
+        Nothing
+    elseif primitive == JavaObject{:int} || primitive == Int32
         jint
     elseif primitive == JavaObject{:long} || primitive == Int64
         jlong
@@ -40,8 +44,11 @@ function convertPrimitive(primitive)
         exprArrayTypeBuilder(:Int8)
     elseif primitive == JavaObject{Symbol("java.lang.String[]")} || primitive == Array{JavaObject{Symbol("java.lang.String")},1}
         exprArrayTypeBuilder(:JString)
-    elseif primitive == Nothing
-        Nothing
+    elseif typeof(primitive) == DataType && primitive <: Array
+        primitive
+    elseif isJavaArray(primitive)
+        global lastArrayType = getTypeOfJavaArrayElements(primitive)
+        expr = exprArrayTypeBuilder(:lastArrayType)
     else
         expr = importExprBuilder(getImportName(primitive))
         eval(expr)
@@ -231,4 +238,15 @@ end
 
 function getTypeName(foo)::String
     last(split(getImportName(foo), "."))
+end
+
+function isJavaArray(foo)::Bool
+    importName = getImportName(foo)
+    occursin("[]", importName)
+end
+
+function getTypeOfJavaArrayElements(foo)
+    importName = getImportName(foo)
+    importName = String(strip(importName, ['[', ']']))
+    JavaCall.jimport(importName)
 end
