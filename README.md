@@ -31,7 +31,7 @@
 
 - Multiple Dispatch as a whole is complicated, but at least support methods with Object and Object[] parameter types.
 
-- Do the due convertion of return values (add convertReturn function, call it with res = eval(expr) in the end of j(expr) function), at least for primitive types (those jcall can convert)
+- <s>Do the due convertion of return values (add convertReturn function, call it with res = eval(expr) in the end of j(expr) function), at least for primitive types (those jcall can convert)</s>
 
 - <s>Support methods that take arrays of other Class Objects. - Ex: public int staticMethod(Line[]) from statement.Printer</s>
 
