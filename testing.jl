@@ -31,7 +31,7 @@ function convertPrimitive(primitive)
         exprArrayTypeBuilder(:Float32)
     elseif primitive == JavaObject{Symbol("double[]")} || primitive == Array{Float64, 1}
         exprArrayTypeBuilder(:Float64)
-    elseif primitive == JavaObject{Symbol("char[]")} || primitive == Array{UInt16, 1}
+    elseif primitive == JavaObject{Symbol("char[]")} || primitive == Array{UInt16, 1} || primitive == Array{Char, 1}
         exprArrayTypeBuilder(:UInt16)
     elseif primitive == JavaObject{Symbol("boolean[]")} || primitive == Array{UInt8, 1}
         exprArrayTypeBuilder(:UInt8)
@@ -57,12 +57,41 @@ function convertPrimitive(primitive)
 end
 
 function convertArgument(argument)
+    argument = eval(argument)
+     # show(argument)
+     # println("\n")
     if typeof(argument) == String
         convert(JString, argument)
-    elseif typeof(eval(argument)) == Array{String,1}
+    elseif typeof(argument) == Array{String,1}
         convert(Array{JString, 1}, eval(argument))
+    elseif typeof(argument) == Char
+        convert(jchar, argument)
+    elseif typeof(argument) == Array{Char, 1}
+        convert(Array{jchar, 1}, argument)
+    elseif typeof(argument) == Bool
+        convert(jboolean, argument)
+    elseif typeof(argument) == Array{Bool, 1}
+        convert(Array{jboolean, 1}, argument)
     else
         argument
+    end
+end
+
+function convertReturns(returns)
+     # show(returns)
+     # println("\n")
+    if typeof(returns) == Array{JString, 1}
+        convert(Array{AbstractString, 1}, returns)
+    elseif typeof(returns) == jchar
+        Char(returns)
+    elseif typeof(returns) == Array{jchar, 1}
+        convert(Array{Char, 1}, returns)
+    elseif typeof(returns) == jboolean
+        convert(Bool, returns)
+    elseif typeof(returns) == Array{jboolean, 1}
+        convert(Array{Bool, 1}, returns)
+    else
+        returns
     end
 end
 
@@ -96,7 +125,8 @@ function j(expr)
         arg = convertArgument(arg)
         push!(exprres.args, arg)
     end
-    exprres
+    res = eval(exprres)
+    convertReturns(res)
 end
 
 macro jcall(expr)
