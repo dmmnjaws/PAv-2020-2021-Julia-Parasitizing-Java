@@ -8,7 +8,7 @@
 ## LIMITATIONS
 - Java supports invocation of static methods in null objects, because these still have a defined type. (ex: Math math = null is of type Math). However we don't support this in our implementation of Java-Parazite-Julia, because we can't (found no way to...), assign a DataType to a nothing in Julia, like we can assign a Class to a null in Java.
 
-### OBSERVATIONS ON JAVACALL (0.7.8):  
+## OBSERVATIONS ON JAVACALL (0.7.8):  
 - JavaCall 0.7.8 bug - wrongful primitive Java types convertion / Scenario: a Java method taking a jint from Julia to Java -> signature: public void method(int i){...} / getparametertypes(method) returns JavaObject{:int} / invoking the method with an input of type JavaObject{:int} fails / invoking the method with an input of type jint works / the bug: asking the method what it receives and passing an argument of that type doesn't work -> wrongful conversion.
 - JavaCall 0.7.8 bug - having jlong as Int64 seems to be a bad idea, since Julia's default ints are Int64, which makes them incompatible with Java's. Same goes for Float32/64. As a consequence, this requires extra effort from the programmer in the return and argument type conversions.
 - JavaCall doesn't allow Static Methods to be called with a class object as receiver??
@@ -35,9 +35,8 @@
 
 - <s>Support methods that take arrays of other Class Objects. - Ex: public int staticMethod(Line[]) from statement.Printer</s>
 
-- If we've got two classes with the same name from different packages, it might get confused (untested)
+- <s>If we've got two classes with the same name from different packages, it might get confused (untested)</s>
 
-- If we've got two methods with the same signature but different return types, Java-Parazite-Julia will only generate one of them.
 
 ## Useful Links:
 

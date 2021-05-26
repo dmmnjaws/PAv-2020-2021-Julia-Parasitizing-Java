@@ -40,7 +40,6 @@ jcall(printer, methodname, jint, (jint, jint), 1, 1)
 # TESTS TO Java-Parazite-Julia:
 
 # INIT
-using JavaCall
 JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
 Printer = JavaCall.jimport("statement.Printer")
 printer = Printer(())

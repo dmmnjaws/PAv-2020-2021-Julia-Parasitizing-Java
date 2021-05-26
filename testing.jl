@@ -1,3 +1,5 @@
+using JavaCall
+
 global definedReceiverFunctionPairs = []
 
 function convertPrimitive(primitive)
@@ -142,7 +144,6 @@ function methodInterpreter(receiver, methodName::String)
         parameterTypes = getparametertypes(method)
         parameterTypes = tuple(map(x -> eval(convertPrimitive(JavaCall.jimport(getname(x)))), parameterTypes)...)
         returnType = convertPrimitive(JavaCall.jimport(getname(getreturntype(method))))
-        methodName = jcall(method, "getName", JString, (),)
         implementationReceiver = receiver
         if isStatic
             if typeof(receiver) == DataType
@@ -238,7 +239,7 @@ function exprStaticReceiverBuilder(importName::String)
 end
 
 function importExprBuilder(importName::String)
-    className = last(split(importName, "."))
+    className = replace(importName, '.' => "")
     expr = :()
     expr.head = :(=)
     push!(expr.args, Symbol(className))
@@ -266,10 +267,6 @@ function getImportName(foo)::String
     str = SubString(str, start, finish)
 end
 
-function getTypeName(foo)::String
-    last(split(getImportName(foo), "."))
-end
-
 function isJavaArray(foo)::Bool
     importName = getImportName(foo)
     occursin("[]", importName)
@@ -279,4 +276,14 @@ function getTypeOfJavaArrayElements(foo)
     importName = getImportName(foo)
     importName = String(strip(importName, ['[', ']']))
     JavaCall.jimport(importName)
+end
+
+function supertypes(T::Type)
+    S = supertype(T)
+    return S === T ? (T,) : (T, supertypes(S)...)
+end
+
+function generateSuperTypeGraph(foo::JavaObject)
+    getClassMethod = first(listmethods(foo, "getClass"))
+    class = jcall(foo, getClassMethod)
 end
