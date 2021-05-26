@@ -278,11 +278,6 @@ function getTypeOfJavaArrayElements(foo)
     JavaCall.jimport(importName)
 end
 
-function supertypes(T::Type)
-    S = supertype(T)
-    return S === T ? (T,) : (T, supertypes(S)...)
-end
-
 function generateSuperTypeGraph(foo::JavaObject)
     getClassMethod = first(listmethods(foo, "getClass"))
     class = jcall(foo, getClassMethod)

@@ -1,6 +1,9 @@
 package statement;
 
 public class Printer extends Device {
+
+    private int globalVar = 0;
+
     public void draw(Line l, Brush b) {
         System.err.println("drawing a line on printer with what?");
     }
@@ -47,6 +50,11 @@ public class Printer extends Device {
         } else {
             return 3;
         }
+    }
+
+    public int incrementGlobalVar(int increment){
+        this.globalVar += increment;
+        return globalVar;
     }
 
     public int returnInt(int i){

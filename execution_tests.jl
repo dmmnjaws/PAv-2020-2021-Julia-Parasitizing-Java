@@ -1,45 +1,8 @@
-# Proof that JavaCall doesn't take care of Multiple Dispatch
-# Given a Line and a Brush, but generalizing the parameter types of draw for Shape and Brush
-# jcall doesn't choose the most specific method
-using JavaCall
-JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
-Printer = JavaCall.jimport("statement.Printer")
-printer = Printer(())
-allMethods = listmethods(printer, "draw")
-returnType = JavaCall.jimport(getname(getreturntype(last(allMethods))))
-parameterTypes = getparametertypes(last(allMethods))
-param1GeneralizationType = JavaCall.jimport(getname(first(parameterTypes)))
-param1SpecificationType = JavaCall.jimport("statement.Line")
-param1 = param1SpecificationType(())
-param2Type = JavaCall.jimport(getname(last(parameterTypes)))
-param2 = param2Type(())
-paramTypeTuple = (param1GeneralizationType, param2Type)
-paramValueTuple = [param1, param2]
-jcall(printer, "draw", returnType, paramTypeTuple, param1, param2)
-expr = :(printer.draw(param1, param2))
-j_u_arrays = @jimport java.util.Arrays
-jcall(j_u_arrays, "binarySearch", jint, (Array{jint,1}, jint), [10,20,30,40,50,60], 40)
-jcall(j_u_arrays, "binarySearch", jint, (Array{JObject,1}, JObject), ["123","abc","uvw","xyz"], "uvw")
-
-paramTypeTuple = (JObject, JString, Array{JObject, 1})
-javaDispatcher = JavaCall.jimport("selector.UsingMultipleDispatchExtended")
-invokeMethod = first(listmethods(javaDispatcher))
-jcall(javaDispatcher, "invoke", JObject, paramTypeTuple, printer, "draw", paramValueTuple)
-
-# JavaCall 0.7.8 bug - wrongful primitive Java types convertion:
-method = first(listmethods(printer, "compute"))
-methodreturntype = JavaCall.jimport(getname(getreturntype(method)))
-methodparametertypes = tuple(map(x-> JavaCall.jimport(getname(x)), getparametertypes(method))...)
-methodname = jcall(method, "getName", JString, (),)
-# this fails because returntype and parametertypes are JavaObject{:int}, which are aparently not the same as jint = Int32:
-jcall(printer, methodname, methodreturntype, methodparametertypes, 1, 1)
-# this works:
-jcall(printer, methodname, jint, (jint, jint), 1, 1)
-
-
-# TESTS TO Java-Parazite-Julia:
+# TESTS TO Java-Parazite Julia:
 
 # INIT
+using JavaCall
+using BenchmarkTools
 JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
 Printer = JavaCall.jimport("statement.Printer")
 printer = Printer(())
@@ -53,7 +16,7 @@ brush = Brush(())
 J_u_arrays = @jimport java.util.Arrays
 j_u_arrays = J_u_arrays()
 
-# WORKING
+# WORKING - REGRESSION TEST SUITE
 @jcall printer.compute(1, 1)
 @jcall printer.compute(Int32(1), Int32(1))
 @jcall printer.staticMethod("ola")
@@ -90,8 +53,64 @@ j_u_arrays = J_u_arrays()
 @jcall printer.returnShortArray([Int16(1), Int16(2)])
 @jcall printer.returnByteArray([Int8(1), Int8(2)])
 @jcall printer.returnStringArray(["ola", "adeus"])
-
+@jcall printer.incrementGlobalVar(Int32(2))
+@jcall printer.incrementGlobalVar(Int32(220))
 
 # NOT WORKING
 @jcall J_u_arrays.binarySearch(["1","2","3","4"], "2")
 @jcall j_u_arrays.binarySearch(["1","2","3","4"], "2")
+
+
+
+
+
+
+
+
+# -------------------------------------------------------------------
+# BENCHMARK
+# skipping the @jcall macro, but effectively doing the same thing...
+function regressionTestSuite()
+    j(:(printer.compute(1, 1)))
+    j(:(printer.compute(Int32(1), Int32(1))))
+    j(:(printer.staticMethod("ola")))
+    j(:(Printer.staticMethod("ola")))
+    j(:(screen.staticMethod("ola")))
+    j(:(Screen.staticMethod("ola")))
+    j(:(printer.staticMethod(["ola", " ", "adeus"])))
+    j(:(Printer.staticMethod(["ola", " ", "adeus"])))
+    j(:(printer.draw(line, brush)))
+    j(:(screen.draw(line, brush)))
+    j(:(printer.staticMethod([line])))
+    j(:(printer.staticMethod([line, line2])))
+    j(:(J_u_arrays.binarySearch([1,2,3,4], 2)))
+    j(:(j_u_arrays.binarySearch([1,2,3,4], 2)))
+    j(:(printer.returnInt(Int32(1))))
+    j(:(printer.returnLong(Int64(1))))
+    j(:(printer.returnFloat(Float32(1))))
+    j(:(printer.returnDouble(Float64(1))))
+    j(:(printer.returnChar(UInt16(1))))
+    j(:(printer.returnChar(Char(1))))
+    j(:(printer.returnBoolean(UInt8(0))))
+    j(:(printer.returnBoolean(true)))
+    j(:(printer.returnShort(Int16(1))))
+    j(:(printer.returnByte(Int8(1))))
+    j(:(printer.returnString("ola")))
+    j(:(printer.returnIntArray([Int32(1), Int32(2)])))
+    j(:(printer.returnLongArray([Int64(1), Int64(2)])))
+    j(:(printer.returnFloatArray([Float32(1), Float32(2)])))
+    j(:(printer.returnDoubleArray([Float64(1), Float64(2)])))
+    j(:(printer.returnCharArray([UInt16(1), UInt16(2)])))
+    j(:(printer.returnCharArray([Char(1), Char(2)])))
+    j(:(printer.returnBooleanArray([UInt8(0), UInt8(1)])))
+    j(:(printer.returnBooleanArray([true, false])))
+    j(:(printer.returnShortArray([Int16(1), Int16(2)])))
+    j(:(printer.returnByteArray([Int8(1), Int8(2)])))
+    j(:(printer.returnStringArray(["ola", "adeus"])))
+    j(:(printer.incrementGlobalVar(Int32(2))))
+    j(:(printer.incrementGlobalVar(Int32(220))))
+    "benchmark concluded"
+end
+
+@time regressionTestSuite()
+@time regressionTestSuite()
