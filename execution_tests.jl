@@ -73,20 +73,6 @@ j_u_arrays = J_u_arrays()
 # BENCHMARKS
 # skipping the @jcall macro, but effectively doing the same thing...
 
-function initOnStartupV()
-    global Printer = jimport("statement.Printer")
-    global printer = Printer(())
-    global Screen = jimport("statement.Screen")
-    global screen = Screen(())
-    global Line = jimport("statement.Line")
-    global line = Line(())
-    global line2 = Line(())
-    global Brush = jimport("statement.Brush")
-    global brush = Brush(())
-    global J_u_arrays = jimport("java.util.Arrays")
-    global j_u_arrays = J_u_arrays()
-end
-
 function initOnDemandV()
     global Printer = JavaCall.jimport("statement.Printer")
     global printer = Printer(())
@@ -99,6 +85,22 @@ function initOnDemandV()
     global brush = Brush(())
     global J_u_arrays = @jimport java.util.Arrays
     global j_u_arrays = J_u_arrays()
+    "init concluded"
+end
+
+function initOnStartupV()
+    global Printer = jimport("statement.Printer")
+    global printer = Printer(())
+    global Screen = jimport("statement.Screen")
+    global screen = Screen(())
+    global Line = jimport("statement.Line")
+    global line = Line(())
+    global line2 = Line(())
+    global Brush = jimport("statement.Brush")
+    global brush = Brush(())
+    global J_u_arrays = jimport("java.util.Arrays")
+    global j_u_arrays = J_u_arrays()
+    "init concluded"
 end
 
 function regressionTestSuite()
@@ -140,7 +142,7 @@ function regressionTestSuite()
     j(:(printer.returnStringArray(["ola", "adeus"])))
     j(:(printer.incrementGlobalVar(Int32(2))))
     j(:(printer.incrementGlobalVar(Int32(220))))
-    "benchmark concluded"
+    "tests concluded"
 end
 
 # On-Demand Version
