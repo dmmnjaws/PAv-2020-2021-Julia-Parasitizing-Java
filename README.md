@@ -20,6 +20,13 @@
 
 ## COMPARING LoadOnDemand and LoadOnStartup
 
+**Brief summary of the two approaches:**
+
+- LoadOnDemand: This was the first approach we implemented. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever a method with said name and said class as receiver is invoked using Java-Parazite Julia. This however limits the use of Java-Parazite Julia to continuous operations in the REPL, as any invocation to a Java method within Julia code will result in an error upon evaluation of said Julia code, stating the method (representing the Java method in Julia) doesn't exist yet.
+
+- LoadOnStartUp: This was the second approach we implemented, in particular as an idea to solve the limitation of the previous approach regarding the evaluation of Julia functions with nested calls to Java methods. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever said class is imported to Julia (thru the jimport method we defined). When a class is jimported, ALL of it's methods are "imported" to Java, meaning all generic functions and specialized methods are imported.
+
+\
 Benchmarks were run in three different machines:
 
 | ID | CPU | RAM | DISK |
@@ -29,7 +36,6 @@ Benchmarks were run in three different machines:
 | laptop2 | INTEL i7-8565U(15W) @ 1800/4600 Mhz    | 16gb ddr4 @ 2667 Mhz | SSD |
 
 \
-\
 Functions Benchmarked:
 
 | function | description |
@@ -38,8 +44,8 @@ Functions Benchmarked:
 | regressionTestSuite | Executes 38 calls to 29 unique Java public methods |
 
 \
-\
 Benchmark Results - *LoadOnDemand:*
+
 | MACHINE | @time initOnDemand/StartupV() | @time regressionTestSuite() | @time regressionTestSuite() |
 |:---:|:---:|:---:|:---:|
 | desktop | 0.391877 seconds <br/> 1.88 M alloc: 99.001 MiB <br/> 5.00% gc time | 2.478652 seconds <br/> 9.46 M alloc: 497.463 MiB <br/> 3.11% gc time | 0.005628 seconds <br/> 6.95 k alloc: 387.375 KiB <br/> |
@@ -47,8 +53,8 @@ Benchmark Results - *LoadOnDemand:*
 | laptop2 |||
 
 \
-\
 Benchmark Results - *LoadOnStartup:*
+
 | MACHINE | @time initOnDemand/StartupV() | @time regressionTestSuite() | @time regressionTestSuite() |
 |:---:|:---:|:---:|:---:|
 | desktop | 1.953634 seconds <br/> 6.23 M alloc: 317.876 MiB <br/> 2.63% gc time | 1.644794 seconds <br/> 6.88 M alloc: 364.215 MiB <br/> 7.92% gc time | 0.005735 seconds <br/> 6.00 k alloc: 337.172 KiB |
@@ -56,12 +62,18 @@ Benchmark Results - *LoadOnStartup:*
 | laptop2 |||
 
 \
-\
 Advantages and Disadvantages of each Approach:
+
 | Approach | Advantages | Disadvantages |
 |:---:|:---:|:---:|
 | **LoadOnDemand** | Enough for simple sessions of Java calling in Julia's REPL, or for sessions that make heavy use of the same set of methods. | Unsuitable for sessions that use large libraries - warm up time is proportional to the amount of new methods called; <br/><br/> Java calls can't be nested in Julia code - only useful for continuous REPL operations using Java.|
 | **LoadOnStartUp** | Better steady-use performance - almost the same as Julia's; <br/><br/> Java calls can be nested within Julia methods.| There's a lot of  unecessary generation of methods the programmer won't likely use in the session, since when a class is imported, all of it's public methods are generated in Julia; <br/><br/> Java classes need to be imported before evaluating Julia code using them. |
+
+\
+**Conclusions and comments:**
+
+The implementation of LoadOnStartup provided us with an important notion we were previously lacking - the generation of the generic functions is one, but not the main source of warm-up overhead. In fact, the LoadOnStartup still took quite a bit upon the first execution of regressionTestSuite(). Even though the generic functions were already generated, the invocations of it's methods for the same time still caused major overhead. This is a sign of Julia's infamous warm up time. It's worth noting we've tested this in version 1.5.3 of Julia, and possibly, there has been some improvement in this regard, with more recent versions. Nevertheless, allowing Java method calls nested inside Julia code is a priceless advantage of the LoadOnStartUp approach, and it brings the syntax of class importing a step closer to Java's syntax.
+
 
 ## TESTING
 
