@@ -6,12 +6,33 @@
 - Since for each new method, we generate all generic functions for that receiver when we call ir the first time, our Java-Parazite-Julia has a bigger start up time.
 
 ## LIMITATIONS
+
 - Java supports invocation of static methods in null objects, because these still have a defined type. (ex: Math math = null is of type Math). However we don't support this in our implementation of Java-Parazite-Julia, because we can't (found no way to...), assign a DataType to a nothing in Julia, like we can assign a Class to a null in Java.
 
-## OBSERVATIONS ON JAVACALL (0.7.8):  
-- JavaCall 0.7.8 bug - wrongful primitive Java types convertion / Scenario: a Java method taking a jint from Julia to Java -> signature: public void method(int i){...} / getparametertypes(method) returns JavaObject{:int} / invoking the method with an input of type JavaObject{:int} fails / invoking the method with an input of type jint works / the bug: asking the method what it receives and passing an argument of that type doesn't work -> wrongful conversion.
-- JavaCall 0.7.8 bug - having jlong as Int64 seems to be a bad idea, since Julia's default ints are Int64, which makes them incompatible with Java's. Same goes for Float32/64. As a consequence, this requires extra effort from the programmer in the return and argument type conversions.
-- JavaCall doesn't allow Static Methods to be called with a class object as receiver??
+- Using a @jcall call in the middle of a Julia method unfortunately is still not possible. Since we don't generate all generic functions upon import of a class, but only upon calling, on demand, Julia will not be able to evaluate a @jcall call, and will warn the user that it's trying to call a method not yet defined. This is something we unfortunately didn't predict early on, and fixing it requires a remodeling of our entire code. A possible approach would be for the generic functions to be pre-loaded, via a mechanim involving static import as the first lines of a Java-Parazite Julia program, just like it's done in Java, substituting the current loaded-on-demand approach. - This renders Java-Parazite Julia only useful for simple realtime calls to Java, for now...
+
+## TESTING
+
+To test Java-Parazite Julia:
+1. Load the files into an IDE supporting Julia
+2. Evaluate the totality of parazitizing.jl (for the base implementation)
+3. Ensure the Java classes in statement folder are compiled
+4. Execute the INIT section of execution_tests.jl in the REPL
+5. Execute the WORKING - REGRESSION TEST SUITE section of execution_tests.jl in the REPL
+
+To run a quick benchmark on Java-Parazite Julia:
+1. Load the files into an IDE supporting Julia
+2. Evaluate the totality of parazitizing.jl (for the base implementation)
+3. Ensure the Java classes in statement folder are compiled
+4. Execute the INIT section of execution_tests.jl in the REPL
+5. Evaluate the regressionTestSuite() function of execution_tests.jl
+6. Run the `@time regressionTestSuite()` in the REPL
+NOTE: The first time the command in 6. is run, the result of the benchmark is inflated due to warm up time. - Just like Julia, Java-Parazite Julia has a significant warm up time, since it has to generate the generic functions. Running the command again and comparing the benchmark results is an interesting experiment.
+
+## OBSERVATIONS ON JAVACALL (0.7.8)
+
+- JavaCall 0.7.8 possible bug - wrongful primitive Java types convertion / Scenario: a Java method taking a jint from Julia to Java -> signature: public void method(int i){...} / getparametertypes(method) returns JavaObject{:int} / invoking the method with an input of type JavaObject{:int} fails / invoking the method with an input of type jint works / the bug: asking the method what it receives and passing an argument of that type doesn't work -> wrongful conversion.
+- JavaCall 0.7.8 possible bug - doesn't allow Static Methods to be called with a class object as receiver??
 
 ## TODO
 
@@ -37,6 +58,7 @@
 
 - <s>If we've got two classes with the same name from different packages, it might get confused (untested)</s>
 
+- <s>Fix bug: a non-static method in a generic function is created with the implementation receiving the first object the method was created for. so if we have printer1 and printer2 objects of Printer and the method incrementGlobalVar() was generated in Julia when called printer1.incrementGlobalVar, the implementation of the method will have printer1 as it's receiver meaning printer1.incrementGlobalVar(2) returns 2, and printer2.incrementGlobalVar(2) returns 4 (instead of 2, which would be correct)</s>
 
 ## Useful Links:
 

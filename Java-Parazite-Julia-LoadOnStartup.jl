@@ -1,6 +1,6 @@
 using JavaCall
 
-global definedReceiverFunctionPairs = []
+global definedReceivers = []
 
 function convertPrimitive(primitive)
      # show(primitive)
@@ -97,6 +97,24 @@ function convertReturns(returns)
     end
 end
 
+function jimport(fullyQualifiedName::String)
+    class = JavaCall.jimport(fullyQualifiedName)
+    if !(fullyQualifiedName in definedReceivers)
+        methods = listmethods(class)
+        methodNames = []
+        for method::JMethod in methods
+            methodName = jcall(method, "getName", JString, (),)
+            push!(methodNames, methodName)
+        end
+        methodNames = unique!(methodNames)
+        for methodName::String in methodNames
+            methodInterpreter(class, methodName)
+        end
+        push!(definedReceivers, fullyQualifiedName)
+    end
+    class
+end
+
 function j(expr)
     try
         if !((expr.head == :call) && (expr.args[1].head == :.))
@@ -111,14 +129,6 @@ function j(expr)
     methodName = string(SubString(string(last(first(expr.args).args)), 2, length(string(last(first(expr.args).args)))))
     arguments = deepcopy(expr.args)
     popfirst!(arguments)
-
-    receiverFunctionPair = getImportName(evaluatedReceiver)*"."*methodName
-    if !(receiverFunctionPair in definedReceiverFunctionPairs)
-         # println("\nDEBUG > This method wasn't interpreted before...")
-        methodInterpreter(evaluatedReceiver, methodName)
-        push!(definedReceiverFunctionPairs, receiverFunctionPair)
-    end
-
     exprres = :()
     exprres.head = :call
     push!(exprres.args, Symbol(methodName))
@@ -152,11 +162,12 @@ function methodInterpreter(receiver, methodName::String)
                 implementationReceiver = typeof(receiver)
             end
         end
-        exprImplementation = exprImplementationBuilder(implementationReceiver, methodName, returnType, parameterTypes)
+        exprImplementation = exprImplementationBuilder(implementationReceiver, methodName, returnType, parameterTypes, isStatic)
         exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes, false)
         expression = exprBuilder(exprSignature, exprImplementation)
         eval(expression)
         if isStatic
+            exprImplementation = exprImplementationBuilder(implementationReceiver, methodName, returnType, parameterTypes, true)
             exprSignature = exprSignatureBuilder(receiver, methodName, parameterTypes, true)
             expression = exprBuilder(exprSignature, exprImplementation)
             eval(expression)
@@ -183,11 +194,15 @@ function exprSignatureBuilder(receiver, methodName::String, parameterTypes, isSt
     expr
 end
 
-function exprImplementationBuilder(receiver, methodName::String, returnType, parameterTypes)
+function exprImplementationBuilder(receiver, methodName::String, returnType, parameterTypes, isStatic::Bool)
     expr = :()
     expr.head = Symbol("block")
     push!(expr.args, LineNumberNode)
-    mainexpr = :(jcall($(receiver), $(methodName), $(returnType), $(parameterTypes)))
+    if(isStatic)
+        mainexpr = :(jcall($(receiver), $(methodName), $(returnType), $(parameterTypes)))
+    else
+        mainexpr = :(jcall(receiver, $(methodName), $(returnType), $(parameterTypes)))
+    end
     i = "a"
     for parameterType::DataType in parameterTypes
         push!(mainexpr.args, Symbol(i))

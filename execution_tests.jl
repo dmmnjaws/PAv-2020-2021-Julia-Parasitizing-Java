@@ -6,6 +6,7 @@ using BenchmarkTools
 JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
 Printer = JavaCall.jimport("statement.Printer")
 printer = Printer(())
+printer2 = Printer(())
 Screen = JavaCall.jimport("statement.Screen")
 screen = Screen(())
 Line = JavaCall.jimport("statement.Line")
@@ -55,6 +56,7 @@ j_u_arrays = J_u_arrays()
 @jcall printer.returnStringArray(["ola", "adeus"])
 @jcall printer.incrementGlobalVar(Int32(2))
 @jcall printer.incrementGlobalVar(Int32(220))
+@jcall printer2.incrementGlobalVar(Int32(2))
 
 # NOT WORKING
 @jcall J_u_arrays.binarySearch(["1","2","3","4"], "2")
@@ -68,8 +70,37 @@ j_u_arrays = J_u_arrays()
 
 
 # -------------------------------------------------------------------
-# BENCHMARK
+# BENCHMARKS
 # skipping the @jcall macro, but effectively doing the same thing...
+
+function initOnStartupV()
+    global Printer = jimport("statement.Printer")
+    global printer = Printer(())
+    global Screen = jimport("statement.Screen")
+    global screen = Screen(())
+    global Line = jimport("statement.Line")
+    global line = Line(())
+    global line2 = Line(())
+    global Brush = jimport("statement.Brush")
+    global brush = Brush(())
+    global J_u_arrays = jimport("java.util.Arrays")
+    global j_u_arrays = J_u_arrays()
+end
+
+function initOnDemandV()
+    global Printer = JavaCall.jimport("statement.Printer")
+    global printer = Printer(())
+    global Screen = JavaCall.jimport("statement.Screen")
+    global screen = Screen(())
+    global Line = JavaCall.jimport("statement.Line")
+    global line = Line(())
+    global line2 = Line(())
+    global Brush = JavaCall.jimport("statement.Brush")
+    global brush = Brush(())
+    global J_u_arrays = @jimport java.util.Arrays
+    global j_u_arrays = J_u_arrays()
+end
+
 function regressionTestSuite()
     j(:(printer.compute(1, 1)))
     j(:(printer.compute(Int32(1), Int32(1))))
@@ -112,5 +143,12 @@ function regressionTestSuite()
     "benchmark concluded"
 end
 
+# On-Demand Version
+@time initOnDemandV()
+@time regressionTestSuite()
+@time regressionTestSuite()
+
+# On-Startup Version
+@time initOnStartupV()
 @time regressionTestSuite()
 @time regressionTestSuite()
