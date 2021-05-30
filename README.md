@@ -34,7 +34,7 @@
 
 We ran benchmarks in order to study the impact of both approaches in performance.
 
-\
+
 Benchmarks were run in three different machines:
 
 | ID | CPU | RAM | DISK |
@@ -43,7 +43,7 @@ Benchmarks were run in three different machines:
 | laptop1 | AMD Ryzen 5 2500U(15W) @ 2000/3600 Mhz | 8gb ddr4 @ 1200Mhz   | SSD |
 | laptop2 | INTEL i7-8565U(15W) @ 1800/4600 Mhz    | 16gb ddr4 @ 2667 Mhz | SSD |
 
-\
+
 Functions Benchmarked:
 
 | FUNCTION | DESCRIPTION |
@@ -53,7 +53,7 @@ Functions Benchmarked:
 
 **NOTE:** The initOnDemandV() and initOnStartupV() differ solely in the syntax and semantic of imports, which differs from the LoadOnDemand to the LoadOnStartup approach. 
 
-\
+
 Benchmark Results - *LoadOnDemand:*
 
 | MACHINE | @time initOnDemandV() | @time regressionTestSuite() | @time regressionTestSuite() |
@@ -62,7 +62,7 @@ Benchmark Results - *LoadOnDemand:*
 | laptop1 | 1.032762 seconds <br/> 1.90 M alloc: 99.742 MiB <br/> 3.33% gc time | 6.288660 seconds <br/> 9.52 M alloc: 499.990 MiB <br/> 2.52% gc time | 0.017268 seconds <br/> 6.95 k alloc: 387.375 KiB <br/> |
 | laptop2 |||
 
-\
+
 Benchmark Results - *LoadOnStartup:*
 
 | MACHINE | @time initOnStartupV() | @time regressionTestSuite() | @time regressionTestSuite() |
@@ -71,7 +71,7 @@ Benchmark Results - *LoadOnStartup:*
 | laptop1 | 5.415532 seconds <br/> 6.57 M alloc: 331.793 MiB <br/> 2.58% gc time | 4.167729 seconds <br/> 6.93 M alloc: 366.198 MiB <br/> 2.91% gc time | 0.021237 seconds <br/> 6.00 k alloc: 337.172 KiB <br/> |
 | laptop2 |||
 
-\
+
 Advantages and Disadvantages of each Approach:
 
 | APPROACH | ADVANTAGES | DISADVANTAGES |
@@ -79,7 +79,7 @@ Advantages and Disadvantages of each Approach:
 | **LoadOnDemand** | Enough for simple sessions of Java calling in Julia's REPL, or for sessions that make heavy use of the same set of methods. | Unsuitable for sessions that use large libraries - warm up time is proportional to the amount of new methods called; <br/><br/> Java calls can't be nested in Julia code - only useful for continuous REPL operations using Java.|
 | **LoadOnStartUp** | Better steady-use performance - almost the same as Julia's; <br/><br/> Java calls can be nested within Julia methods; <br/><br/> Closer to Java's syntax/semantics. | There's a lot of  unecessary generation of methods the programmer won't likely use in the session, since when a class is imported, all of it's public methods are generated in Julia; <br/><br/> Java classes need to be imported before evaluating Julia code using them. |
 
-\
+
 **Conclusions and comments:**
 
 The implementation of LoadOnStartup provided us with an important notion we were previously lacking - the generation of the generic functions is one, but not the main source of warm-up overhead. In fact, the LoadOnStartup still took quite a bit of time upon the first execution of regressionTestSuite(). Even though the generic functions were already generated, the invocations of it's methods for the first time still caused major overhead. This is a sign of Julia's infamous warm up time. It's worth noting we've tested this in version 1.5.3 of Julia, and possibly, there has been some improvement in this regard, with more recent versions. Nevertheless, allowing Java method calls nested inside Julia code is a priceless advantage of the LoadOnStartUp approach, and it brings the syntax of class importing a step closer to Java's syntax/semantics.
