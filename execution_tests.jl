@@ -1,9 +1,19 @@
 # TESTS TO Java-Parazite Julia:
 
+# In order to run the tests:
+# 0. Evaluate either Java-Parazite-Julia-LoadOnStartUp or Java-Parazite-Julia-LoadOnDemand
+# 1. Run, in the REPL, the three lines listed in the INIT section.
+# 2. Run lines listed in the LOSU-INIT section, if testing LoadOnStartup, or LOD-INIT, if testing LoadOnDemand
+# 2-alt. OR, for BENCHMARKING, evaluate and run either @time initOnStartUpV() or @time initOnDemandV(), in the BENCHMARKING section.
+# 3. Run the lines listed in WORKING - REGRESSION TEST SUITE, and inspect the results. Used Java Classes are all present in the statement folder.
+# 3-alt. OR, for BENCHMARKING, evaluate and run @time regressionTestSuite, in the BENCHMARKING section
+
 # INIT
 using JavaCall
 using BenchmarkTools
 JavaCall.init(["-Xmx512M", "-Djava.class.path=$(@__DIR__)"])
+
+# LOD-INIT (exclusive to LoadOnDemand, won't work with LoadOnStartUp)
 Printer = JavaCall.jimport("statement.Printer")
 printer = Printer(())
 printer2 = Printer(())
@@ -15,6 +25,20 @@ line2 = Line(())
 Brush = JavaCall.jimport("statement.Brush")
 brush = Brush(())
 J_u_arrays = @jimport java.util.Arrays
+j_u_arrays = J_u_arrays()
+
+# LOSU-INIT (exclusive to LoadOnStartUp, to test @jimport syntax)
+Printer = @jimport "statement.Printer"
+printer = Printer(())
+printer2 = Printer(())
+Screen = @jimport "statement.Screen"
+screen = Screen(())
+Line = @jimport "statement.Line"
+line = Line(())
+line2 = Line(())
+Brush = @jimport "statement.Brush"
+brush = Brush(())
+J_u_arrays = @jimport "java.util.Arrays"
 j_u_arrays = J_u_arrays()
 
 # WORKING - REGRESSION TEST SUITE
@@ -64,18 +88,14 @@ j_u_arrays = J_u_arrays()
 
 
 
-
-
-
-
-
 # -------------------------------------------------------------------
-# BENCHMARKS
-# skipping the @jcall macro, but effectively doing the same thing...
+# BENCHMARKING
+# skipping the @jcall and @jimport macros, but effectively doing the same thing...
 
 function initOnDemandV()
     global Printer = JavaCall.jimport("statement.Printer")
     global printer = Printer(())
+    global printer2 = Printer(())
     global Screen = JavaCall.jimport("statement.Screen")
     global screen = Screen(())
     global Line = JavaCall.jimport("statement.Line")
@@ -88,9 +108,10 @@ function initOnDemandV()
     "init concluded"
 end
 
-function initOnStartupV()
+function initOnStartUpV()
     global Printer = jimport("statement.Printer")
     global printer = Printer(())
+    global printer2 = Printer(())
     global Screen = jimport("statement.Screen")
     global screen = Screen(())
     global Line = jimport("statement.Line")
@@ -142,15 +163,16 @@ function regressionTestSuite()
     j(:(printer.returnStringArray(["ola", "adeus"])))
     j(:(printer.incrementGlobalVar(Int32(2))))
     j(:(printer.incrementGlobalVar(Int32(220))))
+    j(:(printer2.incrementGlobalVar(Int32(2))))
     "tests concluded"
 end
 
-# On-Demand Version
+# BENCHMARK LoadOnDemand
 @time initOnDemandV()
 @time regressionTestSuite()
 @time regressionTestSuite()
 
-# On-Startup Version
+# BENCHMARK LoadOnStartUp
 @time initOnStartupV()
 @time regressionTestSuite()
 @time regressionTestSuite()

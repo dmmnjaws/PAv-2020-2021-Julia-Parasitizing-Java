@@ -10,6 +10,8 @@
 
 - All development, testing and benchmarking were conducted in Julia 1.5.3 and Java 1.8.0
 
+<br/>
+
 ## LIMITATIONS
 
 - Java supports invocation of static methods in null objects, because these still have a defined type. (ex: Math math = null is of type Math). However we don't support this in our implementation of Java-Parazite-Julia, because we can't (found no way to...), assign a DataType to a nothing in Julia, like we can assign a Class to a null in Java. (*Both LoadOnDemand and LoadOnStartup feature this limitation.*)
@@ -18,13 +20,17 @@
 
 - Class hierarchies are not recognized, for instance: A method that takes an Object, isn't able to be called with a String. (But it should.) Even though an extention to support this wasn't implemented yet, our approach to generic functions had the accomodation of this feature in mind, requiring the aditional reification of the Java class hierarchies, in Julia. If such reification exists, Julia should be able to select a method from a given generic function accordingly (and even making use of Mulitple Dispatch) (*Both LoadOnDemand and LoadOnStartup feature this limitation.*)
 
+- Importing packages instead of explicit classes is not possible. (*Both LoadOnDemand and LoadOnStartup feature this limitation.*)
+
+<br/>
+
 ## COMPARING LoadOnDemand and LoadOnStartup
 
 **Brief summary of the two approaches:**
 
 - LoadOnDemand: This was the first approach we implemented. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever a method with said name and said class as receiver is invoked using Java-Parazite Julia. This however limits the use of Java-Parazite Julia to continuous operations in the REPL, as any invocation to a Java method within Julia code will result in an error upon evaluation of said Julia code, stating the method (representing the Java method in Julia) doesn't exist yet.
 
-- LoadOnStartUp: This was the second approach we implemented, in particular as an idea to solve the limitation of the previous approach regarding the evaluation of Julia functions with nested calls to Java methods. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever said class is imported to Julia (thru the jimport method we defined). When a class is jimported, ALL of it's methods are "imported" to Java, meaning all generic functions and specialized methods are imported.
+- LoadOnStartUp: This was the second approach we implemented, in particular as an idea to solve the limitation of the previous approach regarding the evaluation of Julia functions with nested calls to Java methods. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever said class is imported to Julia (thru the jimport method we defined). When a class is jimported, ALL of it's methods are "imported" to Java, meaning all generic functions and specialized methods are imported. 
 
 \
 Benchmarks were run in three different machines:
@@ -43,7 +49,7 @@ Functions Benchmarked:
 | initOnDemand/StartupV | Initiates 5 Java classes with a total of 297 Java public methods | 
 | regressionTestSuite | Executes 38 calls to 29 unique Java public methods |
 
-NOTE: the initOnDemandV() and initOnStartupV() differ solely in the syntax of imports, which differs from the LoadOnDemand to the LoadOnStartup approach. 
+**NOTE:** The initOnDemandV() and initOnStartupV() differ solely in the syntax and semantic of imports, which differs from the LoadOnDemand to the LoadOnStartup approach. 
 
 \
 Benchmark Results - *LoadOnDemand:*
@@ -76,33 +82,70 @@ Advantages and Disadvantages of each Approach:
 
 The implementation of LoadOnStartup provided us with an important notion we were previously lacking - the generation of the generic functions is one, but not the main source of warm-up overhead. In fact, the LoadOnStartup still took quite a bit upon the first execution of regressionTestSuite(). Even though the generic functions were already generated, the invocations of it's methods for the same time still caused major overhead. This is a sign of Julia's infamous warm up time. It's worth noting we've tested this in version 1.5.3 of Julia, and possibly, there has been some improvement in this regard, with more recent versions. Nevertheless, allowing Java method calls nested inside Julia code is a priceless advantage of the LoadOnStartUp approach, and it brings the syntax of class importing a step closer to Java's syntax.
 
+**IMPORTANT NOTE: It's worth noting that, after the conception of LoadOnStartUp, all posterior development was done on top of this approach, meaning LoadOnDemand remained unupdated. Nevertheless, all base tests included in the Regression Test Suite work on both approaches. However, we strongly encourage further testing to be done on the LoadOnStartUp approach.**
+
+<br/>
 
 ## TESTING
 
-To test Java-Parazite Julia:
-1. Load the files into an IDE supporting Julia
-2. Evaluate the totality of parazitizing.jl (for the base implementation)
-3. Ensure the Java classes in statement folder are compiled
-4. Execute the INIT section of execution_tests.jl in the REPL
-5. Execute the WORKING - REGRESSION TEST SUITE section of execution_tests.jl in the REPL
+### OUR TEST SUITE:
 
-To run a quick benchmark on Java-Parazite Julia:
-1. Load the files into an IDE supporting Julia
-2. Evaluate the totality of parazitizing.jl (for the base implementation)
-3. Ensure the Java classes in statement folder are compiled
-4. Execute the INIT section of execution_tests.jl in the REPL
-5. Evaluate the regressionTestSuite() function of execution_tests.jl
-6. Run the `@time regressionTestSuite()` in the REPL
-NOTE: The first time the command in 6. is run, the result of the benchmark is inflated due to warm up time. - Just like Julia, Java-Parazite Julia has a significant warm up time, since it has to generate the generic functions. Running the command again and comparing the benchmark results is an interesting experiment.
+The file execution_tests.jl features a full test suite that tests the following quirks of Java-Parazite Julia:
+- call to Java methods taking jint, jlong, jfloat, jdouble, jchar, (Julia) Char, jboolean, (Julia) Bool, jshort, jbyte as parameters
+- call to Java methods taking arrays of all primitives listed above
+- call to Java methods taking String and String arrays as parameters
+- call to polymorphic Java method
+- call to a static method from an instance object
+- call to a static method from a non-instantiated class
+- call to methods taking other class instances as parameters
+- call to methods that alter a global variable in a Java object, 
+- call of the same method that alters global variables in a Java object, in two different Java objects to verify each object is being updated independently of the other
+
+The tests can be ran in both the LoadOnDemand and LoadOnStartUp versions, but in order to import the needed classes for LoadOnStartUp, given the alternative syntax, it's recommended to run the initOnStartupV() function. - The default way of importing Java classes into Julia provided by JavaCall will not work with the LoadOnDStartUp approach.
+
+### MANUAL:
+
+**LoadOnDemand**
+- Loading a Java class into Julia:
+  - Class = JavaCall.jimport("package.Class")
+- Creating an instance of said class:
+  - classInstance = Class(())
+- Invoking a Java method:
+  - @jcall classInstance.methodName(argument1, argument2, ...)
+  - res = @jcall classInstance.methodName(argument1, argument2, ...)
+
+**LoadOnStartup**
+- Loading a Java class into Julia:
+  - Class = @jimport "package.Class"
+- Creating an instance of said class:
+  - classInstance = Class(())
+- Invoking a Java method:
+  - @jcall classInstance.methodName(argument1, argument2, ...)
+  - res = @jcall classInstance.methodName(argument1, argument2, ...)
+
+<br/>
+
+## STUFF WE DIDN'T EXPLORE
+
+There were a few things we choose to not explore due to time constraints, or that we downright forgot to explore. These are things that we would like to revisit in future work.
+
+- **Java Constructors** - We did not explore the "implementation" of Java constructors in Julia. We're not aware if they work as intended or not, other than parameter-less constructors (these work as offered by default by JavaCall). This was something that came to mind during a brainstorm session close to the deadline, therefore constructors with parameters remain untested.
+
+- **Java VarArgs Methods** - Like Java Constructors, we did not explore the convertion of Java VarArgs methods into Julia methods, and we're not aware if they work as intended or not in our current implementation. This is something we had in mind since the beginning but the idea fell behind in the midst of other priorities. The generation/call of Julia methods corresponding to Java VarArg Methods remains untested.
+<br/><br/>
+
+# DEVELOPMENT NOTES
 
 ## OBSERVATIONS ON JAVACALL (0.7.8)
 
 - JavaCall 0.7.8 possible bug - wrongful primitive Java types convertion / Scenario: a Java method taking a jint from Julia to Java -> signature: public void method(int i){...} / getparametertypes(method) returns JavaObject{:int} / invoking the method with an input of type JavaObject{:int} fails / invoking the method with an input of type jint works / the bug: asking the method what it receives and passing an argument of that type doesn't work -> wrongful conversion.
 - JavaCall 0.7.8 possible bug - doesn't allow Static Methods to be called with a class object as receiver??
 
+<br/>
+
 ## TODO
 
-- <s>Fix wrongful conversion from Julia int to Java's long (due to Julia's int type being Int64, which maps to Java's long). Test: @jcall printer.compute(1, 1) should invoke public int compute(int i, int j) instead of public int compute(long i, long j).</s> Solution: there's no solution! We can do for instance Int32(1) and it converts 1 to an Int32.
+- <s>Fix wrongful conversion from Julia int to Java's long (due to Julia's int type being Int64, which maps to Java's long). Test: @jcall printer.compute(1, 1) should invoke public int compute(int i, int j) instead of public int compute(long i, long j).</s> Solution: there's no solution! We can do for instance Int32(1) and it converts 1::Int64 to 1::Int32.
 
 - <s>Support Static Invocations.</s>
 
@@ -124,7 +167,11 @@ NOTE: The first time the command in 6. is run, the result of the benchmark is in
 
 - <s>If we've got two classes with the same name from different packages, it might get confused (untested)</s>
 
+- Support Java VarAgrs methods (uncertain, test if they work in current implementation)
+
 - <s>Fix bug: a non-static method in a generic function is created with the implementation receiving the first object the method was created for. so if we have printer1 and printer2 objects of Printer and the method incrementGlobalVar() was generated in Julia when called printer1.incrementGlobalVar, the implementation of the method will have printer1 as it's receiver meaning printer1.incrementGlobalVar(2) returns 2, and printer2.incrementGlobalVar(2) returns 4 (instead of 2, which would be correct)</s>
+
+<br/>
 
 ## Useful Links:
 

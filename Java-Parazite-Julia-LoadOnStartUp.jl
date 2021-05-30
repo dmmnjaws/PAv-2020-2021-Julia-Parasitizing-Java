@@ -145,6 +145,10 @@ macro jcall(expr)
     j(expr)
 end
 
+macro jimport(fullyQualifiedName::String)
+    jimport(fullyQualifiedName)
+end
+
 function methodInterpreter(receiver, methodName::String)
     methods = listmethods(receiver, methodName)
     for method::JMethod in methods
