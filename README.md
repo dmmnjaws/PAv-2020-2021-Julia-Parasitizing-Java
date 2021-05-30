@@ -43,6 +43,8 @@ Functions Benchmarked:
 | initOnDemand/StartupV | Initiates 5 Java classes with a total of 297 Java public methods | 
 | regressionTestSuite | Executes 38 calls to 29 unique Java public methods |
 
+NOTE: the initOnDemandV() and initOnStartupV() differ solely in the syntax of imports, which differs from the LoadOnDemand to the LoadOnStartup approach. 
+
 \
 Benchmark Results - *LoadOnDemand:*
 
