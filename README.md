@@ -39,9 +39,9 @@ Benchmarks were run in three different machines:
 
 | ID | CPU | RAM | DISK |
 |:---:|:---:|:---:|:---:|
-| desktop | AMD Ryzen 5 5600X(65W) @ 3700/4650 Mhz | 16gb ddr4 @ 1200Mhz  | SSD |
-| laptop1 | AMD Ryzen 5 2500U(15W) @ 2000/3600 Mhz | 8gb ddr4 @ 1200Mhz   | SSD |
-| laptop2 | INTEL i7-8565U(15W) @ 1800/4600 Mhz    | 16gb ddr4 @ 2667 Mhz | SSD |
+| desktop | AMD Ryzen 5 5600X(65W) @ 3700/4650 Mhz 6cores/12threads | 16gb ddr4 @ 1200Mhz  | SSD |
+| laptop1 | AMD Ryzen 5 2500U(15W) @ 2000/3600 Mhz 4cores/8threads | 8gb ddr4 @ 1200Mhz   | SSD |
+| laptop2 | INTEL i5-7200U(15W) @ 2400/3100 Mhz 2cores/4threads   | 8gb ddr4 @ 1200Mhz | SSD |
 
 
 Functions Benchmarked:
@@ -60,7 +60,7 @@ Benchmark Results - *LoadOnDemand:*
 |:---:|:---:|:---:|:---:|
 | desktop | 0.391877 seconds <br/> 1.88 M alloc: 99.001 MiB <br/> 5.00% gc time | 2.478652 seconds <br/> 9.46 M alloc: 497.463 MiB <br/> 3.11% gc time | 0.005628 seconds <br/> 6.95 k alloc: 387.375 KiB <br/> |
 | laptop1 | 1.032762 seconds <br/> 1.90 M alloc: 99.742 MiB <br/> 3.33% gc time | 6.288660 seconds <br/> 9.52 M alloc: 499.990 MiB <br/> 2.52% gc time | 0.017268 seconds <br/> 6.95 k alloc: 387.375 KiB <br/> |
-| laptop2 |||
+| laptop2 | 1.206014 seconds <br/> 1.88 M alloc: 99.001 MiB <br/> 3.61% gc time | 7.598155 seconds <br/> 9.45 M alloc: 497.448 MiB <br/> 2.41% gc time | 0.027408 seconds <br/> 6.95 k alloc: 387.375 KiB |
 
 
 Benchmark Results - *LoadOnStartup:*
@@ -69,7 +69,7 @@ Benchmark Results - *LoadOnStartup:*
 |:---:|:---:|:---:|:---:|
 | desktop | 1.953634 seconds <br/> 6.23 M alloc: 317.876 MiB <br/> 2.63% gc time | 1.644794 seconds <br/> 6.88 M alloc: 364.215 MiB <br/> 7.92% gc time | 0.005735 seconds <br/> 6.00 k alloc: 337.172 KiB |
 | laptop1 | 5.415532 seconds <br/> 6.57 M alloc: 331.793 MiB <br/> 2.58% gc time | 4.167729 seconds <br/> 6.93 M alloc: 366.198 MiB <br/> 2.91% gc time | 0.021237 seconds <br/> 6.00 k alloc: 337.172 KiB <br/> |
-| laptop2 |||
+| laptop2 | 6.162297 seconds <br/> 6.22 M alloc: 316.949 MiB <br/> 2.04% gc time | 5.571538 seconds <br/> 6.87 M alloc: 363.601 MiB <br/> 5.04% gc time | 0.024880 seconds <br/> 6.00 k alloc: 337.172 KiB |
 
 
 Advantages and Disadvantages of each Approach:
