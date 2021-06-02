@@ -88,6 +88,7 @@ Benchmark Results - *LoadOnStartup:*
 | laptop1 | 5.415532 seconds <br/> 6.57 M alloc: 331.793 MiB <br/> 2.58% gc time | 4.167729 seconds <br/> 6.93 M alloc: 366.198 MiB <br/> 2.91% gc time | 0.021237 seconds <br/> 6.00 k alloc: 337.172 KiB <br/> |
 | laptop2 | 6.162297 seconds <br/> 6.22 M alloc: 316.949 MiB <br/> 2.04% gc time | 5.571538 seconds <br/> 6.87 M alloc: 363.601 MiB <br/> 5.04% gc time | 0.024880 seconds <br/> 6.00 k alloc: 337.172 KiB |
 
+**NOTE:** It's worth noting that, with LoadOnStartUp, running the initiation a second time won't wield the same values - when a Java class is imported, the generic functions corresponding to it's public methods are only generated if they weren't generated before...
 
 Advantages and Disadvantages of each Approach:
 
