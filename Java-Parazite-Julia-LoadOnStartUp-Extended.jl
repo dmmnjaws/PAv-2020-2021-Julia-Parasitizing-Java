@@ -297,7 +297,8 @@ function getTypeOfJavaArrayElements(foo)
     JavaCall.jimport(importName)
 end
 
-function generateSuperTypes(foo::JavaObject)
+function generateSuperTypes(foo)
+    foo = foo(()) # this. is. ugly. - it's a bandage
     getClassMethod = first(listmethods(foo, "getClass"))
     class = jcall(foo, getClassMethod)
     Helper = JavaCall.jimport("utils.Helper")
