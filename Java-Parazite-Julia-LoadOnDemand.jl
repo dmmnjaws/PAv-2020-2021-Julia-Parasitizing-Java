@@ -210,11 +210,11 @@ function exprParameterBuilder(parameterName::Symbol, parameterType)
     expr
 end
 
-function exprBuilder(exprSignature::Expr, exprImplementaiton::Expr)
+function exprBuilder(exprSignature::Expr, exprImplementation::Expr)
     expr = :()
     expr.head = :(=)
     push!(expr.args, exprSignature)
-    push!(expr.args, exprImplementaiton)
+    push!(expr.args, exprImplementation)
     expr
 end
 
