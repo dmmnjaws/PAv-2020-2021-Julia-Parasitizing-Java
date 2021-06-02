@@ -15,6 +15,8 @@
 
 - /util folder - folder containing aiding Java code
 
+<br/>
+
 ## GENERAL NOTES
 
 - One of our main focuses is to not compromise any of Julia's semantics in order to allow invocations to the JVM from Julia.
