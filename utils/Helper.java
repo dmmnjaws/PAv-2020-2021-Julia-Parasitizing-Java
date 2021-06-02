@@ -9,9 +9,10 @@ public class Helper{
      * @param parameterType the desired parameter type
      * @return an ArrayList with all superclasses of parameterType.
      */
-    public static ArrayList<Class> getAllSuperclasses(Class parameterType){
+    public static Class[] getAllSuperclasses(Class parameterType){
 
         ArrayList<Class> allSuperClasses = new ArrayList<>();
+        allSuperClasses.add(parameterType);
 
         while(parameterType.getSuperclass() != Object.class){
             allSuperClasses.add(parameterType.getSuperclass());
@@ -19,7 +20,6 @@ public class Helper{
         }
 
         allSuperClasses.add(Object.class);
-
-        return allSuperClasses;
+        return allSuperClasses.toArray(new Class[0]);
     }
 }

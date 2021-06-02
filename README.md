@@ -1,5 +1,20 @@
 # PAv-2020-2021-Julia-Parasitizing-Java
 
+## PROJECT STRUCTURE
+
+- Java-Parazite-Julia-LoadOnDemand.jl - file containing the Julia code of the LoadOnDemand approach of Java-Parazite Julia
+
+- Java-Parazite-Julia-LoadOnStartUp.jl - file containing the Julia code of the LoadOnStartUp approach of Java-Parazite Julia
+
+- Java-Parazite-Julia-LoadOnStartUp-Extended.jl - same as above but used to experiment with extensions (*everything done after the June the 2nd*), these are the differences:
+  - Addition of a generateSuperTypes function that for a given class returns all of it's Superclasses in Java
+
+- execution_tests.jl - file containing all Julia code related to tests
+
+- /statement folder - folder containing Java classes for testing (recompile these if needed)
+
+- /util folder - folder containing aiding Java code
+
 ## GENERAL NOTES
 
 - One of our main focuses is to not compromise any of Julia's semantics in order to allow invocations to the JVM from Julia.
@@ -30,7 +45,7 @@
 
 - **LoadOnDemand**: This was the first approach we implemented. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever a method with said name and said class as receiver is invoked using Java-Parazite Julia. This however limits the use of Java-Parazite Julia to continuous operations in the REPL, as any invocation to a Java method within Julia code will result in an error upon evaluation of said Julia code, stating the method (representing the Java method in Julia) doesn't exist yet.
 
-- **LoadOnStartUp**: This was the second approach we implemented, in particular as an idea to solve the limitation of the previous approach regarding the evaluation of Julia functions with nested calls to Java methods. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever said class is imported to Julia (through the jimport method we defined). When a class is jimported, ALL of it's methods are "imported" to Java, meaning all generic functions and specialized methods are imported. 
+- **LoadOnStartUp**: This was the second approach we implemented, in particular as an idea to solve the limitation of the previous approach regarding the evaluation of Julia functions with nested calls to Java methods. In this approach, the generic function that reifies a Java Class' methods with a given name is generated whenever said class is imported to Julia (through the jimport method we defined). When a class is jimported, ALL of it's methods are "imported" to Java, meaning all generic functions and specialized methods are imported.
 
 We ran benchmarks in order to study the impact of both approaches in performance.
 
@@ -48,10 +63,10 @@ Functions Benchmarked:
 
 | FUNCTION | DESCRIPTION |
 |:---:|:---:|
-| initOnDemand/StartupV | Initiates 5 Java classes with a total of 297 Java public methods | 
+| initOnDemand/StartupV | Initiates 5 Java classes with a total of 297 Java public methods |
 | regressionTestSuite | Executes 38 calls to 27 unique Java public methods |
 
-**NOTE:** The initOnDemandV() and initOnStartupV() differ solely in the syntax and semantic of imports, which differs from the LoadOnDemand to the LoadOnStartup approach. 
+**NOTE:** The initOnDemandV() and initOnStartupV() differ solely in the syntax and semantic of imports, which differs from the LoadOnDemand to the LoadOnStartup approach.
 
 
 Benchmark Results - *LoadOnDemand:*
@@ -102,8 +117,8 @@ The file execution_tests.jl features a full test suite that tests the following 
 - call to static Java methods from an instance object receiver
 - call to static Java methods from a non-instantiated class receiver
 - call to Java methods taking other class instances as parameters
-- call to Java methods taking arrays of instances of other classes as parameters 
-- call to Java methods that alter a global variable in a Java object, 
+- call to Java methods taking arrays of instances of other classes as parameters
+- call to Java methods that alter a global variable in a Java object,
 - call to the same Java method that alters global variables in a Java object, in two different Java objects to verify each object is being updated independently of the other
 
 The tests can be ran in both the LoadOnDemand and LoadOnStartUp versions, but be mindfull that each approach requires slightly different initialization - The default way of importing Java classes into Julia provided by JavaCall will not work with the LoadOnStartUp approach. We strongly recommend following the steps provided in the beginning of the execution_test.jl file.
@@ -147,6 +162,8 @@ There were a few things we choose to not explore due to time constraints, or tha
 - **Java VarArgs Methods** - Like Java Constructors, we did not explore the convertion of Java VarArgs methods into Julia methods, and we're not aware if they work as intended or not in our current implementation. This is something we had in mind since the beginning but the idea fell behind in the midst of other priorities. The generation/call of Julia methods corresponding to Java VarArg Methods remains untested.
 <br/><br/>
 
+- **Supertyping and Multiple Dispatch** - Supertyping and Multiple Dispatch pose a different kind of challenge. Even though this section is called "STUFF WE DIDN'T EXPLORE", we did explore these concepts loosely and came up with some conclusions (mainly resulting from experimentation and discussion with professor António). **Supertyping** alone, or ideally, reifying the Java class hierarchies in Julia, poses a challenge - in Java for a given class, it's superclasses can be instantiated, however, in Julia, this isn't the case - a type in Julia, for instance, Int64 can be instantiated, but it's supertypes, Signed, Integer, Real, Number and Any can't be instantiated on their own. This of course represents a radical disparity between Java's Semantic and Julia's Semantic. **Multiple Dispatch** could make use of **Supertyping** if possible, but another challenge emerges - In Java, multiple extension is possible, since a class can inherit from another class and implement multiple interfaces. However, in Julia, this is impossible - In Julia, a type can only have one supertype, therefore, for instance, calling supertypes(Int64) returning Signed, Integer, Real, Number and Any, actually returns the types, in order, belonging to an unidirectional chain of supertypes, with Int64 being it's only "leaf". Again, a radical disparity between Java and Julia's Semantic. However, it could be interesting to explore this in future work, in particular, by starting small... Even though Java has multiple extension of interfaces, it only supports single inheritance of classes (a class can only have up to one superclass), which is closer to Julia's singular supertyping, and could be a starting point (ignoring interfase hiearchy, for a start). Nevertheless, the challenge prompted by **Supertyping** emerges once again...
+
 # DEVELOPMENT NOTES
 
 ## OBSERVATIONS ON JAVACALL (0.7.8)
@@ -158,7 +175,7 @@ There were a few things we choose to not explore due to time constraints, or tha
 
 ## TODO
 
-- <s>Fix wrongful conversion from Julia int to Java's long (due to Julia's int type being Int64, which maps to Java's long). Test: @jcall printer.compute(1, 1) should invoke public int compute(int i, int j) instead of public int compute(long i, long j).</s> Solution: there's no solution! We can do for instance Int32(1) and it converts 1::Int64 to 1::Int32.
+- <s>Fix wrongful conversion from Julia int to Java's long (due to Julia's int type being Int64, which maps to Java's long). Test: @jcall printer.compute(1, 1) should invoke public int compute(int i, int j) instead of public int compute(long i, long j).</s> (*EDIT: Solution: We can do for instance Int32(1) and it converts 1::Int64 to 1::Int32.*)
 
 - <s>Support Static Invocations.</s>
 
@@ -172,7 +189,7 @@ There were a few things we choose to not explore due to time constraints, or tha
 
 - <s>Avoid method generation if corresponding generic function if already defined - performance</s>
 
-- Multiple Dispatch as a whole is complicated, but at least support methods with Object and Object[] parameter types.
+- Multiple Dispatch as a whole is complicated, but at least support methods with Object and Object[] parameter types. (*EDIT: Discussed in the section "STUFF WE DIDN'T EXPLORE"*)
 
 - <s>Do the due convertion of return values (add convertReturn function, call it with res = eval(expr) in the end of j(expr) function), at least for primitive types (those jcall can convert)</s>
 
@@ -180,7 +197,7 @@ There were a few things we choose to not explore due to time constraints, or tha
 
 - <s>If we've got two classes with the same name from different packages, it might get confused (untested)</s>
 
-- Support Java VarAgrs methods (uncertain, test if they work in current implementation)
+- Support Java VarAgrs methods (uncertain, test if they work in current implementation) (*EDIT: Discussed in the section "STUFF WE DIDN'T EXPLORE"*)
 
 - <s>Fix bug: a non-static method in a generic function is created with the implementation receiving the first object the method was created for. so if we have printer1 and printer2 objects of Printer and the method incrementGlobalVar() was generated in Julia when called printer1.incrementGlobalVar, the implementation of the method will have printer1 as it's receiver meaning printer1.incrementGlobalVar(2) returns 2, and printer2.incrementGlobalVar(2) returns 4 (instead of 2, which would be correct)</s>
 
