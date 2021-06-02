@@ -2,18 +2,18 @@
 
 ## PROJECT STRUCTURE
 
-- Java-Parazite-Julia-LoadOnDemand.jl - file containing the Julia code of the LoadOnDemand approach of Java-Parazite Julia
+- **Java-Parazite-Julia-LoadOnDemand.jl** - file containing the Julia code of the LoadOnDemand approach of Java-Parazite Julia
 
-- Java-Parazite-Julia-LoadOnStartUp.jl - file containing the Julia code of the LoadOnStartUp approach of Java-Parazite Julia
+- **Java-Parazite-Julia-LoadOnStartUp.jl** - file containing the Julia code of the LoadOnStartUp approach of Java-Parazite Julia
 
-- Java-Parazite-Julia-LoadOnStartUp-Extended.jl - same as above but used to experiment with extensions (*everything done after the June the 2nd*), these are the differences:
+- **Java-Parazite-Julia-LoadOnStartUp-Extended.jl** - same as above but used to experiment with extensions (*everything done after the June the 2nd*), these are the differences:
   - Addition of a generateSuperTypes function that for a given class returns all of it's Superclasses in Java
 
-- execution_tests.jl - file containing all Julia code related to tests
+- **execution_tests.jl** - file containing all Julia code related to tests
 
-- /statement folder - folder containing Java classes for testing (recompile these if needed)
+- **/statement folder** - folder containing Java classes for testing (recompile these if needed)
 
-- /util folder - folder containing aiding Java code
+- **/util folder** - folder containing aiding Java code
 
 <br/>
 
