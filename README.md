@@ -25,7 +25,7 @@
 
 - With time we realized it would be interesting to explore two alternatives to the generic-function generation of Java-Parazite Julia: One that generates the methods on-demand (when a method is called for the first time), and another that generates the methods upon startup (similarly to Java, imports (jimport) should be done in the beginning).
 
-- All development, testing and benchmarking were conducted in Julia 1.5.3 and Java 1.8.0
+- All development, testing and benchmarking were conducted in Julia 1.5.3 and Java 1.8.0, using JavaCall 0.7.8
 
 <br/>
 
